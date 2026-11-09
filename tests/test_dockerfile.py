@@ -15,7 +15,6 @@ from wheelgap.dockerfile import DockerfileError, ImageTarget, last_from, parse_f
         ("python:3.13-bookworm", ImageTarget("3.13", "linux-x86_64", glibc="2.36")),
         ("python:3.11-slim-bullseye", ImageTarget("3.11", "linux-x86_64", glibc="2.31")),
         ("python:3.13.1-alpine3.22 AS runtime", ImageTarget("3.13", "musl-x86_64", musl="1.2")),
-        ("--platform linux/arm64 python:3.13-alpine", ImageTarget("3.13", "musl-aarch64", musl="1.2")),
         ("docker.io/library/python:3.12", ImageTarget("3.12", "linux-x86_64")),
         ("python:3.13-slim@sha256:" + "0" * 64, ImageTarget("3.13", "linux-x86_64")),
         ("python:3.15.0a1-slim", ImageTarget("3.15", "linux-x86_64")),
@@ -286,6 +285,13 @@ def test_escape_directive_rules(tmp_path):
         ("# syntax=docker/dockerfile:1\n# syntax=docker/dockerfile:1\nFROM python:3.12\n", "only one syntax"),
         ("FROM python:3.12 AS a\nFROM\\\npython:3.11\n", "unknown instruction 'FROMpython:3.11'"),
         ("FROM python:3.12 AS a\nFROM\n", "FROM with no image"),
+        ("FROM --platform linux/arm64 python:3.13\n", "unknown flag '--platform'"),
+        ("FROM --foo=bar python:3.13\n", "unknown flag '--foo=bar'"),
+        ("FROM python:3.13-alpine AS\n", "invalid FROM syntax"),
+        ("FROM python:3.13 AS\n", "invalid FROM syntax"),
+        ("FROM python:3.13 builder\n", "invalid FROM syntax"),
+        ("FROM python:3.13 AS a b\n", "invalid FROM syntax"),
+        ("FROM --platform= python:3.13\n", "unknown flag '--platform='"),
     ],
 )
 def test_dockerfiles_docker_rejects(tmp_path, text, message):

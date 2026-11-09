@@ -125,14 +125,17 @@ def _split_from(args: str) -> tuple[str, str | None, str | None]:
     platform = None
     while words and words[0].startswith("--"):
         flag = words.pop(0)
-        if flag.startswith("--platform="):
+        if flag.startswith("--platform=") and len(flag) > len("--platform="):
             platform = flag.split("=", 1)[1]
-        elif flag == "--platform" and words:
-            platform = words.pop(0)
+        else:
+            raise DockerfileError(f"FROM {args}: unknown flag {flag!r}")
     if not words:
         raise DockerfileError(f"FROM {args}: no image")
-    stage = words[2].lower() if len(words) >= 3 and words[1].upper() == "AS" else None
-    return words[0], platform, stage
+    if len(words) == 1:
+        return words[0], platform, None
+    if len(words) == 3 and words[1].upper() == "AS":
+        return words[0], platform, words[2].lower()
+    raise DockerfileError(f"FROM {args}: invalid FROM syntax")
 
 
 def parse_from(args: str) -> ImageTarget:
