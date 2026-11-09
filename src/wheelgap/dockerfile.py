@@ -142,7 +142,9 @@ def _split_from(args: str) -> tuple[str, str | None, str | None]:
         return words[0], platform, None
     if len(words) == 3 and words[1].upper() == "AS":
         return words[0], platform, words[2].lower()
-    raise DockerfileError(f"FROM {args}: expected 'IMAGE' or 'IMAGE AS NAME'")
+    raise DockerfileError(
+        f"FROM {args}: expected 'IMAGE' or 'IMAGE AS NAME' (if this line is inside a heredoc, pass -p/-t instead)"
+    )
 
 
 def parse_from(args: str) -> ImageTarget:

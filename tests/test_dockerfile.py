@@ -295,6 +295,7 @@ def test_escape_directive_rules(tmp_path):
         ("FROM python:3.13 builder\n", "expected 'IMAGE' or 'IMAGE AS NAME'"),
         ("FROM python:3.13 AS a b\n", "expected 'IMAGE' or 'IMAGE AS NAME'"),
         ("FROM --platform=linux/arm64 --platform=linux/amd64 python:3.13\n", "duplicate --platform flag"),
+        ("FROM --platform= --platform=linux/arm64 python:3.13\n", "duplicate --platform flag"),
         ("FROM python:3.13 AS\nFROM python:3.12\n", "expected 'IMAGE' or 'IMAGE AS NAME'"),
     ],
 )
