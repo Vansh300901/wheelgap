@@ -120,22 +120,29 @@ def last_from(text: str) -> str:
 
 
 def _split_from(args: str) -> tuple[str, str | None, str | None]:
-    """`[--platform=P] image [AS name]` -> (image, platform, stage name)."""
+    """`[--platform=P] image [AS name]` -> (image, platform, stage name), rejecting what Docker rejects."""
     words = args.split()
     platform = None
+    seen_platform = False
     while words and words[0].startswith("--"):
         flag = words.pop(0)
-        if flag.startswith("--platform=") and len(flag) > len("--platform="):
-            platform = flag.split("=", 1)[1]
-        else:
+        if flag == "--":  # BuildKit drops it and stops reading flags
+            break
+        if flag == "--platform":
+            raise DockerfileError(f"FROM {args}: --platform needs a value: use --platform=VALUE")
+        if not flag.startswith("--platform="):
             raise DockerfileError(f"FROM {args}: unknown flag {flag!r}")
+        if seen_platform:
+            raise DockerfileError(f"FROM {args}: duplicate --platform flag")
+        seen_platform = True
+        platform = flag.split("=", 1)[1] or None  # an empty value means the default platform, as in Docker
     if not words:
         raise DockerfileError(f"FROM {args}: no image")
     if len(words) == 1:
         return words[0], platform, None
     if len(words) == 3 and words[1].upper() == "AS":
         return words[0], platform, words[2].lower()
-    raise DockerfileError(f"FROM {args}: invalid FROM syntax")
+    raise DockerfileError(f"FROM {args}: expected 'IMAGE' or 'IMAGE AS NAME'")
 
 
 def parse_from(args: str) -> ImageTarget:
